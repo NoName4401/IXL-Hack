@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "IXL Vision Solver",
+  "version": "1.0",
+  "permissions": ["activeTab", "storage", "scripting"],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  
+  "content_scripts": [
+    {
+      "matches": ["*://*.ixl.com/*"],
+      "js": ["content.js"]
+    }
+  ],
+  "host_permissions": ["https://generativelanguage.googleapis.com/*"]
+
+  
+}
