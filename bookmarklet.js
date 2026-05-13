@@ -24,17 +24,20 @@ async function ixlSolve() {
 
         // 3. Call AI via Proxy (Required for Bookmarklets)
         // Note: You may need to use a proxy like 'cors-anywhere' 
-        const proxy = "https://cors-anywhere.herokuapp.com/"; 
-        const url = `${proxy}https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+        // Use a CORS proxy to bypass browser security
+        const proxy = "https://corsproxy.io/?"; 
+        const apiTarget = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=" + apiKey;
 
-        const response = await fetch(url, {
+        const response = await fetch(proxy + encodeURIComponent(apiTarget), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                "contents": [{"parts": [
-                    {"text": "Solve this IXL problem. Output ONLY the answer."},
-                    {"inline_data": {"mime_type": "image/png", "data": base64Image}}
-                ]}]
+                "contents": [{
+                    "parts": [
+                        { "text": "Solve the problem in this image. Output only the final answer." },
+                        { "inline_data": { "mime_type": "image/png", "data": base64Image } }
+                    ]
+                }]
             })
         });
 
