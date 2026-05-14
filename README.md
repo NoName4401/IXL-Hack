@@ -25,7 +25,92 @@ Adding the solver to your browser takes less than 30 seconds:
 
 ### The Bookmarklet (Copy this)
 ```javascript
-javascript:(async function(){if(window.isSolving)return;window.isSolving=true;const controller=new AbortController();for(let i=1;i<9999;i++)window.clearInterval(i);window.onbeforeunload=()=>"No";const k="AIzaSyCHK1ZFijBESRJYKmUGkABOBqxYPKqBWb0";const load=document.createElement('div');load.style.cssText="position:fixed;top:20px;right:20px;padding:15px;background:#000;color:#0f0;border:1px solid #0f0;z-index:9999999;font-family:monospace;border-radius:10px;text-align:center;box-shadow:0 0 15px #000;min-width:180px;";load.innerHTML=`<span style='font-size:10px;color:#888;'>SYSTEM STATUS</span><br><span id='solve-status' style='font-size:14px;'>INITIALIZING...</span><br><button id='cancel-solve' style='margin-top:10px;background:#300;color:#f33;border:1px solid #f33;cursor:pointer;font-size:10px;padding:2px 8px;border-radius:4px;'>CANCEL</button>`;document.body.appendChild(load);const cleanup=()=>{load.remove();window.isSolving=false;};document.getElementById('cancel-solve').onclick=()=>{controller.abort();cleanup();};try{const s=await navigator.mediaDevices.getDisplayMedia({video:{displaySurface:"browser"}}).catch(()=>{throw new Error("Share Cancelled");});document.getElementById('solve-status').innerText="COMPRESSING...";const v=document.createElement('video');v.srcObject=s;await v.play();const c=document.createElement('canvas');c.width=v.videoWidth;c.height=v.videoHeight;c.getContext('2d').drawImage(v,0,0);const b=c.toDataURL('image/jpeg',0.6).split(',')[1];s.getTracks().forEach(t=>t.stop());document.getElementById('solve-status').innerText="SOLVING...";const promptText="Identify the math problem. 1) If it is a simple equation or word problem, solve it instantly. 2) If it is a graph, locate (0,0) and trace axes carefully to find key points or the vertex. Output ONLY the final numerical or coordinate answer. No text.";const url=`[https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=$](https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=$){k}`;const response=await fetch(url,{method:"POST",signal:controller.signal,headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:promptText},{inline_data:{mime_type:"image/jpeg",data:b}}]}]})});const d=await response.json();cleanup();if(d.error)throw new Error(d.error.message);const a=d.candidates[0].content.parts[0].text;const o=document.createElement('div');o.style.cssText="position:fixed;top:20px;right:20px;padding:25px;background:#000;color:#fff;border:2px solid #0f0;z-index:9999999;font-family:monospace;border-radius:15px;box-shadow:0 0 20px #0f0;cursor:pointer;text-align:center;min-width:150px;";o.innerHTML=`<span style='font-size:10px;color:#0f0;'>NONAME'S SOLVER</span><br><br><span style='font-size:38px;font-weight:bold;'>${a}</span><br><p style='font-size:10px;margin-top:10px;color:#888;'>Click to dismiss</p>`;o.onclick=()=>o.remove();document.body.appendChild(o);}catch(e){cleanup();if(e.name!=='AbortError'&&e.message!=="Share Cancelled"){alert("Error: "+e.message);}}})();
+javascript:(async function(){
+  if(window.isSolving) return;
+  window.isSolving = true;
+  const controller = new AbortController();
+
+  /* 1. Security Check: Get or Set Key */
+  let k = localStorage.getItem('no_name_key');
+  if(!k){
+    k = prompt("Enter your Gemini API Key (Required for first-time setup):");
+    if(k) {
+      localStorage.setItem('no_name_key', k);
+    } else {
+      window.isSolving = false;
+      return;
+    }
+  }
+
+  /* 2. Kill IXL Refresh Loops */
+  for(let i=1;i<9999;i++) window.clearInterval(i);
+  window.onbeforeunload=()=>"No";
+
+  /* 3. UI Setup */
+  const load = document.createElement('div');
+  load.style.cssText = "position:fixed;top:20px;right:20px;padding:15px;background:#000;color:#0f0;border:1px solid #0f0;z-index:9999999;font-family:monospace;border-radius:10px;text-align:center;box-shadow:0 0 15px #000;min-width:180px;";
+  load.innerHTML = `<span style='font-size:10px;color:#888;'>SYSTEM STATUS</span><br><span id='solve-status' style='font-size:14px;'>INITIALIZING...</span><br><button id='cancel-solve' style='margin-top:10px;background:#300;color:#f33;border:1px solid #f33;cursor:pointer;font-size:10px;padding:2px 8px;border-radius:4px;'>CANCEL</button>`;
+  document.body.appendChild(load);
+
+  const cleanup = () => { load.remove(); window.isSolving = false; };
+  document.getElementById('cancel-solve').onclick = () => { controller.abort(); cleanup(); };
+
+  try {
+    const s = await navigator.mediaDevices.getDisplayMedia({video:{displaySurface:"browser"}}).catch(()=>{throw new Error("Share Cancelled");});
+    document.getElementById('solve-status').innerText = "COMPRESSING...";
+    
+    const v = document.createElement('video');
+    v.srcObject = s; await v.play();
+    const c = document.createElement('canvas');
+    c.width = v.videoWidth; c.height = v.videoHeight;
+    c.getContext('2d').drawImage(v, 0, 0);
+    const b = c.toDataURL('image/jpeg', 0.6).split(',')[1];
+    s.getTracks().forEach(t=>t.stop());
+
+    document.getElementById('solve-status').innerText = "SOLVING...";
+
+    const promptText = "Identify the math problem. 1) If it is a simple equation or word problem, solve it instantly. 2) If it is a graph, locate (0,0) and trace axes carefully to find key points or the vertex. Output ONLY the final numerical or coordinate answer. No text.";
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${k}`;
+    
+    const response = await fetch(url, {
+      method: "POST",
+      signal: controller.signal,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            { text: promptText },
+            { inline_data: { mime_type: "image/jpeg", data: b } }
+          ]
+        }]
+      })
+    });
+
+    const d = await response.json();
+    cleanup();
+
+    if (d.error) {
+      if(d.error.message.includes("API key not valid")) {
+        localStorage.removeItem('no_name_key');
+        alert("Invalid API Key. Please click the bookmark again to re-enter it.");
+      }
+      throw new Error(d.error.message);
+    }
+
+    const a = d.candidates[0].content.parts[0].text;
+    const o = document.createElement('div');
+    o.style.cssText = "position:fixed;top:20px;right:20px;padding:25px;background:#000;color:#fff;border:2px solid #0f0;z-index:9999999;font-family:monospace;border-radius:15px;box-shadow:0 0 20px #0f0;cursor:pointer;text-align:center;min-width:150px;";
+    o.innerHTML = `<span style='font-size:10px;color:#0f0;'>NONAME'S SOLVER</span><br><br><span style='font-size:38px;font-weight:bold;'>${a}</span><br><p style='font-size:10px;margin-top:10px;color:#888;'>Click to dismiss</p>`;
+    o.onclick = () => o.remove();
+    document.body.appendChild(o);
+
+  } catch(e) { 
+    cleanup();
+    if (e.name !== 'AbortError' && e.message !== "Share Cancelled") {
+      alert("Error: " + e.message);
+    }
+  }
+})();
 ```
 
 How to Use:
@@ -49,46 +134,90 @@ Latency: v1.5 uses JPEG compression to reduce payload size by over $70\%$, speed
 
 
 ```JavaScript
-(async function() {
-  // Prevent double execution
-  if (window.isSolving) return;
+javascript:(async function(){
+  if(window.isSolving) return;
   window.isSolving = true;
   const controller = new AbortController();
 
-  // Kill refresh loops
-  for (let i = 1; i < 9999; i++) window.clearInterval(i);
-  window.onbeforeunload = () => "No";
+  /* 1. Security Check: Get or Set Key */
+  let k = localStorage.getItem('no_name_key');
+  if(!k){
+    k = prompt("Enter your Gemini API Key (Required for first-time setup):");
+    if(k) {
+      localStorage.setItem('no_name_key', k);
+    } else {
+      window.isSolving = false;
+      return;
+    }
+  }
 
-  const apiKey = "AIzaSyCHK1ZFijBESRJYKmUGkABOBqxYPKqBWb0";
+  /* 2. Kill IXL Refresh Loops */
+  for(let i=1;i<9999;i++) window.clearInterval(i);
+  window.onbeforeunload=()=>"No";
 
-  // UI Setup
+  /* 3. UI Setup */
   const load = document.createElement('div');
-  // ... styling code ...
-  load.innerHTML = `<span>INITIALIZING...</span><button id='cancel-solve'>CANCEL</button>`;
+  load.style.cssText = "position:fixed;top:20px;right:20px;padding:15px;background:#000;color:#0f0;border:1px solid #0f0;z-index:9999999;font-family:monospace;border-radius:10px;text-align:center;box-shadow:0 0 15px #000;min-width:180px;";
+  load.innerHTML = `<span style='font-size:10px;color:#888;'>SYSTEM STATUS</span><br><span id='solve-status' style='font-size:14px;'>INITIALIZING...</span><br><button id='cancel-solve' style='margin-top:10px;background:#300;color:#f33;border:1px solid #f33;cursor:pointer;font-size:10px;padding:2px 8px;border-radius:4px;'>CANCEL</button>`;
   document.body.appendChild(load);
 
-  try {
-    const stream = await navigator.mediaDevices.getDisplayMedia({video: {displaySurface: "browser"}});
-    // JPEG Compression for speed
-    // ... canvas drawing logic ...
-    const base64Data = canvas.toDataURL('image/jpeg', 0.6).split(',')[1];
+  const cleanup = () => { load.remove(); window.isSolving = false; };
+  document.getElementById('cancel-solve').onclick = () => { controller.abort(); cleanup(); };
 
-    // API Call to Gemini v1beta
-    const response = await fetch(apiUrl, {
+  try {
+    const s = await navigator.mediaDevices.getDisplayMedia({video:{displaySurface:"browser"}}).catch(()=>{throw new Error("Share Cancelled");});
+    document.getElementById('solve-status').innerText = "COMPRESSING...";
+    
+    const v = document.createElement('video');
+    v.srcObject = s; await v.play();
+    const c = document.createElement('canvas');
+    c.width = v.videoWidth; c.height = v.videoHeight;
+    c.getContext('2d').drawImage(v, 0, 0);
+    const b = c.toDataURL('image/jpeg', 0.6).split(',')[1];
+    s.getTracks().forEach(t=>t.stop());
+
+    document.getElementById('solve-status').innerText = "SOLVING...";
+
+    const promptText = "Identify the math problem. 1) If it is a simple equation or word problem, solve it instantly. 2) If it is a graph, locate (0,0) and trace axes carefully to find key points or the vertex. Output ONLY the final numerical or coordinate answer. No text.";
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${k}`;
+    
+    const response = await fetch(url, {
       method: "POST",
       signal: controller.signal,
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contents: [{
           parts: [
-            { text: "Universal Math Logic Prompt" },
-            { inline_data: { mime_type: "image/jpeg", data: base64Data } }
+            { text: promptText },
+            { inline_data: { mime_type: "image/jpeg", data: b } }
           ]
         }]
       })
     });
-    // ... result handling ...
-  } catch (e) {
-    // ... error cleanup ...
+
+    const d = await response.json();
+    cleanup();
+
+    if (d.error) {
+      if(d.error.message.includes("API key not valid")) {
+        localStorage.removeItem('no_name_key');
+        alert("Invalid API Key. Please click the bookmark again to re-enter it.");
+      }
+      throw new Error(d.error.message);
+    }
+
+    const a = d.candidates[0].content.parts[0].text;
+    const o = document.createElement('div');
+    o.style.cssText = "position:fixed;top:20px;right:20px;padding:25px;background:#000;color:#fff;border:2px solid #0f0;z-index:9999999;font-family:monospace;border-radius:15px;box-shadow:0 0 20px #0f0;cursor:pointer;text-align:center;min-width:150px;";
+    o.innerHTML = `<span style='font-size:10px;color:#0f0;'>NONAME'S SOLVER</span><br><br><span style='font-size:38px;font-weight:bold;'>${a}</span><br><p style='font-size:10px;margin-top:10px;color:#888;'>Click to dismiss</p>`;
+    o.onclick = () => o.remove();
+    document.body.appendChild(o);
+
+  } catch(e) { 
+    cleanup();
+    if (e.name !== 'AbortError' && e.message !== "Share Cancelled") {
+      alert("Error: " + e.message);
+    }
   }
 })();
 ```
