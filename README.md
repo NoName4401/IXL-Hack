@@ -48,7 +48,7 @@ The Refresh Workaround: If the page reloads upon sharing, wait 3 seconds after t
 Latency: v1.5 uses JPEG compression to reduce payload size by over $70\%$, speeding up performance on slow networks.🛠️ Technical OverviewDeveloped with a focus on low-latency execution and spatial reasoning bypasses:Origin Anchoring: Logic is instructed to locate $(0,0)$ first to prevent coordinate hallucinations.Abort Signal: Includes a CANCEL function to terminate API calls and save quota.CSP Bypass: Communicates directly with whitelisted Google endpoints to avoid security blocks on school domains.
 
 
-JavaScript
+```JavaScript
 (async function() {
   // Prevent double execution
   if (window.isSolving) return;
@@ -91,6 +91,7 @@ JavaScript
     // ... error cleanup ...
   }
 })();
+```
 
 Future Plans:
 A dedicated Browser Extension is in development, featuring:Automatic answer injection.Background processing (no screen-share popup).Encrypted API keys and advanced school-device bypasses.[!WARNING]Disclaimer: This tool is intended for educational demonstrations and verifying your own work. Use responsibly.Built by NoName
